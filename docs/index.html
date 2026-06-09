@@ -1,0 +1,79 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gacha Companion</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: #1e1f22;
+      color: #dcddde;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .card {
+      background-color: #2b2d31;
+      border: 1px solid #3b3d42;
+      border-radius: 12px;
+      padding: 3rem 2.5rem;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 0.75rem;
+    }
+
+    p {
+      font-size: 1rem;
+      color: #949ba4;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+
+    .download-btn {
+      display: inline-block;
+      background-color: #5865f2;
+      color: #ffffff;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 0.75rem 2rem;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background-color 0.2s ease;
+    }
+
+    .download-btn:hover {
+      background-color: #4752c4;
+    }
+
+    .meta {
+      margin-top: 1.5rem;
+      font-size: 0.8rem;
+      color: #5c5f66;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Gacha Companion</h1>
+    <p>A personal desktop companion for your gacha games. Track characters, resources, and more — all in one place.</p>
+    <a class="download-btn" href="https://github.com/DeKadey/gacha-companion-launcher/releases/latest/download/GachaCompanion-Setup.exe">
+      Download for Windows
+    </a>
+    <p class="meta">Windows 10 / 11 &nbsp;·&nbsp; 64-bit</p>
+  </div>
+</body>
+</html>
