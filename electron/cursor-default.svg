@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+
+    <!-- Star path — 3-arm sparkle with puzzle-piece indent for the diamond -->
+    <!-- Indent updated for 20%-larger diamond: corner points (31.365,26.205) and (26.205,31.365), inner (21.06,21.06) -->
+    <path id="star" d="M3,3 C16.02,16.02 28.56,19.44 36,12 C31.8,16.2 30.9,21.45 31.365,26.205 L21.06,21.06 L26.205,31.365 C21.45,30.9 16.2,31.8 12,36 C19.44,28.56 16.02,16.02 3,3 Z"/>
+
+    <!-- Holographic fill gradient (48px userSpace) -->
+    <linearGradient id="holo" gradientUnits="userSpaceOnUse" x1="4.5" y1="4.5" x2="42" y2="42">
+      <stop offset="0"    stop-color="#8FF0DC"/>
+      <stop offset="0.22" stop-color="#73C6F7"/>
+      <stop offset="0.48" stop-color="#B0AAF4"/>
+      <stop offset="0.74" stop-color="#D49EF0"/>
+      <stop offset="1"    stop-color="#A3ABF4"/>
+    </linearGradient>
+
+    <!-- White core sheen -->
+    <radialGradient id="core" gradientUnits="userSpaceOnUse" cx="22.5" cy="21.75" r="18">
+      <stop offset="0"    stop-color="#FFFFFF" stop-opacity="1"/>
+      <stop offset="0.34" stop-color="#FFF3CC" stop-opacity="0.62"/>
+      <stop offset="0.82" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Warm red accent in bottom-right corner -->
+    <radialGradient id="red" gradientUnits="userSpaceOnUse" cx="40.5" cy="40.5" r="13.5">
+      <stop offset="0"    stop-color="#D02C20" stop-opacity="0.55"/>
+      <stop offset="0.65" stop-color="#D02C20" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Star-shaped glow: blur the star fill -->
+    <filter id="glowF" filterUnits="userSpaceOnUse" x="-10" y="-10" width="68" height="68">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+
+    <!-- Drop shadow: small blur, applied to offset copy -->
+    <filter id="shadowF" filterUnits="userSpaceOnUse" x="-8" y="-4" width="62" height="58">
+      <feGaussianBlur stdDeviation="1.8"/>
+    </filter>
+
+  </defs>
+
+  <!-- Drop shadow — offset (-2, +2) = bottom-left (light from top-right) -->
+  <use href="#star" xlink:href="#star" fill="#08041a" opacity="0.45" filter="url(#shadowF)" transform="translate(-2,2)"/>
+
+  <!-- Star-shaped glow (behind the star fill) -->
+  <use href="#star" xlink:href="#star" fill="#A8E8FF" opacity="0.55" filter="url(#glowF)"/>
+
+  <!-- Main star: holographic fill → warm red corner → white core sheen → edge stroke -->
+  <use href="#star" xlink:href="#star" fill="url(#holo)"/>
+  <use href="#star" xlink:href="#star" fill="url(#red)"/>
+  <use href="#star" xlink:href="#star" fill="url(#core)"/>
+  <use href="#star" xlink:href="#star" fill="none" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="0.9" stroke-linejoin="round"/>
+
+  <!-- Diamond — 20% larger, flat 3D shading, crispEdges eliminates seam lines -->
+  <!-- TL(25.2,25.2)  TR(33.552,28.944)  BR(37.296,37.296)  BL(28.944,33.552)  O(31.248,31.248) -->
+  <g shape-rendering="crispEdges">
+    <path d="M25.2,25.2   L31.248,31.248 L33.552,28.944 Z" fill="#FFF0A0"/>
+    <path d="M33.552,28.944 L31.248,31.248 L37.296,37.296 Z" fill="#E8A820"/>
+    <path d="M28.944,33.552 L31.248,31.248 L25.2,25.2   Z" fill="#A87010"/>
+    <path d="M37.296,37.296 L31.248,31.248 L28.944,33.552 Z" fill="#704806"/>
+  </g>
+
+  <!-- Diamond outline — smooth outer edges via normal AA stroke -->
+  <path d="M25.2,25.2 L33.552,28.944 L37.296,37.296 L28.944,33.552 Z"
+        fill="none" stroke="#C88A0A" stroke-opacity="0.85" stroke-width="0.75" stroke-linejoin="round"/>
+
+</svg>

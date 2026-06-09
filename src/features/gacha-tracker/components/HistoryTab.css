@@ -1,0 +1,918 @@
+.history-tab {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 700px;
+}
+
+/* Filter bar */
+.history-filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-filter-row {
+  display: flex;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-filter-toggles {
+  display: flex;
+  flex: 1;
+}
+
+.history-filter-btn {
+  padding: 7px 16px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.history-filter-btn:hover { color: var(--text-secondary); }
+.history-filter-btn--active { color: var(--accent); }
+
+/* Edit / Save / Cancel controls */
+.history-edit-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 6px;
+  flex-shrink: 0;
+}
+
+.history-action-btn {
+  padding: 5px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: var(--cur-pointer);
+  transition: opacity 0.15s, background 0.15s;
+}
+.history-action-btn:disabled { opacity: 0.4; cursor: var(--cur-default); }
+
+.history-action-btn--ghost {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.history-action-btn--ghost:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-primary); }
+
+.history-action-btn--primary {
+  color: #fff;
+  border: none;
+}
+.history-action-btn--primary:hover { opacity: 0.85; }
+
+/* Editable cell inputs */
+.history-edit-input {
+  width: 80px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  padding: 3px 6px;
+  text-align: center;
+  outline: none;
+}
+.history-edit-input::-webkit-outer-spin-button,
+.history-edit-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.history-edit-input[type=number] { -moz-appearance: textfield; }
+
+/* Dropdowns */
+.history-dropdowns {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.history-select {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  padding: 6px 10px;
+  cursor: var(--cur-pointer);
+  transition: border-color 0.15s;
+  appearance: auto;
+}
+.history-select:focus { outline: none; border-color: var(--accent); }
+.history-select:hover { border-color: var(--border-bright); }
+
+/* Summary */
+.history-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+}
+
+html.has-bg .history-summary {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.history-summary-item { display: flex; flex-direction: column; gap: 2px; }
+.history-summary-label {
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text-muted);
+}
+.history-summary-value { font-size: 18px; font-weight: 700; font-family: var(--font-mono); }
+.history-summary-sep { width: 1px; height: 36px; background: var(--border); flex-shrink: 0; }
+
+/* Empty */
+.history-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 24px 0;
+}
+
+/* Table */
+.history-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+}
+
+html.has-bg .history-table-wrap {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.history-table thead tr {
+  border-bottom: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+}
+
+/* Column headers */
+.history-table th {
+  padding: 9px 16px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.history-th-date  { text-align: left; }
+.history-th-center { text-align: center; }
+.history-th-right  { text-align: right; }
+
+/* Cells */
+.history-table td {
+  padding: 9px 16px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+.history-table tbody tr:last-child td { border-bottom: none; }
+.history-table tbody tr:hover td { background: var(--bg-hover); }
+
+.history-td-center { text-align: center; font-family: var(--font-mono); }
+.history-td-right  { text-align: right;  font-family: var(--font-mono); }
+
+.history-row--today td { background: var(--accent-glow); }
+.history-row--today:hover td { filter: brightness(1.05); }
+
+.history-date {
+  text-align: left;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.history-today-badge {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  margin-left: 7px;
+}
+
+.history-total { font-weight: 600; color: inherit; }
+
+.history-zero { color: var(--text-muted); }
+
+/* Brighter table text over backgrounds — inline style on totals still takes priority */
+html.has-bg .history-table td {
+  color: #f2f3f5;
+}
+html.has-bg .history-zero {
+  color: #9898b8;
+}
+
+/* ─── Pull log layout ────────────────────────────────────────────────────────── */
+
+.history-tab--pulls { gap: 0; overflow: hidden; max-width: none; }
+
+/* Flex column: row 1 (banner-bar) spans full width,
+   then pl-lower splits into left column + right banner panel */
+.pull-log {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Below row 1 — two columns: left (rarity+stats+rows) and right (banner panel) */
+.pl-lower {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;
+  padding-top: 10px;
+}
+
+/* Left column inside pl-lower */
+.pl-left {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Row 1: full-width banner type buttons + Clear history.
+   The border-bottom is the visual separator between row 1 and the two-column area. */
+.pl-banner-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+/* Clear history / confirm group use inline margin-left: auto to stay far-right */
+
+.pl-banner-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: var(--cur-pointer);
+  letter-spacing: 0.02em;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.pl-banner-btn:hover { border-color: var(--border-bright); color: var(--text-secondary); }
+.pl-banner-btn--on {
+  /* border-color and color applied via inline style using the resolved game/app color */
+  background: var(--bg-surface);
+}
+
+.pl-banner-count {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  opacity: 0.75;
+}
+
+/* Filter bar */
+.pl-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pl-filter-left {
+  display: flex;
+  gap: 6px;
+}
+
+.pl-rarity-btn {
+  padding: 5px 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: var(--cur-pointer);
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.pl-rarity-btn:hover { border-color: var(--border-bright); color: var(--text-secondary); }
+.pl-rarity-btn--on { font-weight: 700; }
+
+.pl-filter-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.pl-stat { display: flex; align-items: center; gap: 4px; line-height: 1; }
+.pl-stat-n { font-size: 13px; font-weight: 700; font-family: var(--font-mono); color: var(--text-secondary); }
+.pl-stat-sep { width: 1px; height: 12px; background: var(--border); }
+
+/* Column header row — Stars | Name | Banner | Type | Roll | 50/50 | Pity | Date */
+.pl-header-row {
+  display: grid;
+  grid-template-columns: 54px 1fr 1fr 40px 40px 32px 40px 80px;
+  gap: 12px;
+  padding: 5px 18px 5px 12px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+/* Scrollable rows area — flex: 1 fills remaining height in .pl-left */
+.pl-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Pull list */
+.pl-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+html.has-bg .pl-list {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.pl-row {
+  display: grid;
+  grid-template-columns: 54px 1fr 1fr 40px 40px 32px 40px 80px;
+  gap: 12px;
+  align-items: center;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid transparent;
+  font-size: 13px;
+  transition: background 0.1s;
+}
+.pl-row:last-child { border-bottom: none; }
+.pl-row:hover { background: var(--bg-hover); }
+
+.pl-row--five {
+  border-left-width: 3px;
+}
+
+.pl-stars {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.pl-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pl-type {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.pl-banner {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pl-pity {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.pl-date {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Clear history button — padding mirrors the Customize button (dashboard-settings-btn) */
+/* ─── No banner placeholder ──────────────────────────────────────────────── */
+
+.pl-no-banner {
+  height: 30px;
+  padding: 0 11px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  display: flex;
+  align-items: center;
+  opacity: 0.5;
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* ─── Rarity colours via CSS classes (so has-bg can override) ─── */
+.pl-rarity-btn--r3 { background: rgba(91,  159, 201, 0.12); }
+.pl-rarity-btn--r4 { background: rgba(149, 115, 200, 0.12); }
+.pl-rarity-btn--r5 { background: rgba(200, 148,  60, 0.15); }
+
+/* Button visibility over background images — inactive */
+html.has-bg .pl-banner-btn:not(.pl-banner-btn--on) {
+  background: rgba(20, 20, 32, 0.72);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--text-secondary);
+}
+html.has-bg .pl-banner-btn:not(.pl-banner-btn--on):hover {
+  background: rgba(30, 30, 46, 0.85);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+html.has-bg .pl-rarity-btn:not(.pl-rarity-btn--on) {
+  background: rgba(20, 20, 32, 0.72);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--text-secondary);
+}
+html.has-bg .pl-rarity-btn:not(.pl-rarity-btn--on):hover {
+  background: rgba(30, 30, 46, 0.85);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+/* Button visibility over background images — active */
+html.has-bg .pl-banner-btn--on {
+  background: rgba(10, 10, 18, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  /* border-color and color applied via inline style */
+}
+html.has-bg .pl-banner-btn--on:hover {
+  background: rgba(18, 18, 28, 0.88);
+}
+
+html.has-bg .pl-rarity-btn--on {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+html.has-bg .pl-rarity-btn--r3.pl-rarity-btn--on { background: rgba(35, 90, 140, 0.65); }
+html.has-bg .pl-rarity-btn--r4.pl-rarity-btn--on { background: rgba(80, 45, 158, 0.65); }
+html.has-bg .pl-rarity-btn--r5.pl-rarity-btn--on { background: rgba(130, 80,  15, 0.65); }
+
+/* Load more */
+.pl-load-more {
+  display: block;
+  margin: 10px auto 4px;
+  padding: 8px 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: var(--cur-pointer);
+  font-family: var(--font-ui);
+  transition: background 0.12s, border-color 0.12s;
+}
+.pl-load-more:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Selected-banner clear chip — floats to far right via auto margin */
+
+/* ─── Selected group badge (filter bar) ─────────────────────────────────────── */
+
+.pl-selected-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.pl-selected-badge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+}
+.pl-selected-badge--character::before {
+  background: linear-gradient(to right, rgba(200, 148, 60, 0.55) 0%, transparent 30%);
+}
+.pl-selected-badge--weapon::before {
+  background: linear-gradient(to left, rgba(200, 148, 60, 0.55) 0%, transparent 30%);
+}
+
+.pl-selected-badge-close {
+  background: none;
+  border: none;
+  padding: 0 6px 0 4px;
+  cursor: var(--cur-pointer);
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1;
+  font-family: var(--font-ui);
+  transition: color 0.12s;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
+.pl-selected-badge-close:hover { color: #fff; }
+
+/* ─── Banner panel (right column) ──────────────────────────────────────────── */
+
+/* Full-height scrollable list — no header, starts at the same level as the filter header */
+.pl-banner-panel {
+  flex-shrink: 0;
+  overflow-y: auto;
+  min-height: 0;
+  width: 118px;
+  box-sizing: border-box;
+  margin-left: 14px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.pl-banner-panel-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 12px 0;
+  text-align: center;
+}
+
+/* Individual banner card */
+.pl-bcard {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--bg-elevated);
+  overflow: hidden;
+  cursor: var(--cur-pointer);
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  text-align: left;
+  padding: 0;
+  flex-shrink: 0;
+  width: fit-content;
+  position: relative;
+}
+
+/* Gold gradient overlay — character: left-to-transparent, weapon: right-to-transparent */
+.pl-bcard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+}
+.pl-bcard--character::before {
+  background: linear-gradient(to right, rgba(200, 148, 60, 0.55) 0%, transparent 30%);
+}
+.pl-bcard--weapon::before {
+  background: linear-gradient(to left, rgba(200, 148, 60, 0.55) 0%, transparent 30%);
+}
+
+.pl-bcard:hover {
+  border-color: var(--border-bright);
+  background: var(--bg-hover);
+}
+
+.pl-bcard--selected {
+  /* selection ring rendered via outline + outline-offset in JS so it floats off the card */
+}
+
+.pl-bcard-imgs {
+  display: flex;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Scrolling marquee for banners with more than 2 images (HSR 3–4 character phases) */
+.pl-bcard-imgs--scroll {
+  width: 56px; /* always 2 × 28px visible */
+  overflow: hidden;
+}
+
+.pl-bcard-imgs-strip {
+  display: flex;
+  flex-shrink: 0;
+  animation: pl-img-scroll var(--pl-scroll-dur, 3s) linear infinite;
+}
+
+@keyframes pl-img-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(var(--pl-scroll-dist, -56px)); }
+}
+
+
+.pl-bcard-img {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+  flex-shrink: 0;
+  filter: drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.7));
+}
+
+.pl-bcard-placeholder {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.pl-bcard-info {
+  padding: 0 8px;
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+  z-index: 1;
+}
+
+.pl-bcard-version {
+  font-size: 12px;
+  color: #fff;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.pl-bcard-date {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  line-height: 1.3;
+}
+
+/* Date range is the primary info on the card (name removed) */
+.pl-bcard-date--range {
+  font-size: 8.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Banner panel over background images */
+html.has-bg .pl-banner-panel {
+  border-left-color: rgba(255, 255, 255, 0.18);
+}
+
+html.has-bg .pl-bcard:not(.pl-bcard--selected) {
+  background: rgba(20, 20, 32, 0.72);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+html.has-bg .pl-bcard:not(.pl-bcard--selected):hover {
+  background: rgba(30, 30, 46, 0.85);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+/* ─── 50/50 fate dot ─────────────────────────────────────────────────────── */
+
+.pl-fate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pl-fate-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ─── Date column header with sort toggle ────────────────────────────────── */
+
+.pl-date-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.pl-sort-btn {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  cursor: var(--cur-pointer);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  line-height: 1;
+  font-family: var(--font-ui);
+  transition: color 0.12s;
+  flex-shrink: 0;
+}
+.pl-sort-btn:hover { color: var(--text-secondary); }
+
+/* ─── Roll number column ─────────────────────────────────────────────────── */
+
+.pl-roll {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* ─── Banner bar right group (JSON warning + clear button) ───────────────── */
+
+.pl-banner-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* ─── JSON file missing indicator ────────────────────────────────────────── */
+
+.pl-json-missing {
+  position: relative;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.08);
+  color: #fbbf24;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: var(--cur-default);
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* Portal tooltip for JSON missing — rendered at body level to escape overflow:hidden */
+.pl-json-missing-tooltip-portal {
+  background: rgba(14, 14, 22, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  padding: 6px 11px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* Downward-pointing arrow toward the badge */
+.pl-json-missing-tooltip-arrow {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border: 5px solid transparent;
+  border-top-color: rgba(14, 14, 22, 0.96);
+}
+
+/* ─── Disabled banner card (no Excel uploaded) ───────────────────────────── */
+
+.pl-bcard--disabled {
+  opacity: 0.35;
+  cursor: var(--cur-default);
+  pointer-events: auto; /* keep so hover tooltip works */
+}
+
+.pl-bcard--disabled:hover {
+  border-color: var(--border);
+  background: var(--bg-elevated);
+}
+
+html.has-bg .pl-bcard--disabled:hover {
+  background: rgba(20, 20, 32, 0.72);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ─── Banner card portal tooltip ─────────────────────────────────────────── */
+
+/* Rendered via ReactDOM.createPortal at document.body — position: fixed,
+   transform: translate(-100%, -50%) puts the right edge at 'left', centered vertically */
+.pl-banner-tooltip {
+  position: fixed;
+  transform: translate(-100%, -50%);
+  background: rgba(14, 14, 22, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  padding: 6px 11px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* Arrow pointing right toward the banner card */
+.pl-banner-tooltip::after {
+  content: '';
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border: 5px solid transparent;
+  border-left-color: rgba(14, 14, 22, 0.96);
+}
+
+/* ─── Background-image overrides: white text + darker blur ──────────────── */
+
+/* Darker blur tint on the pull-log and history panels */
+html.has-bg .pl-list,
+html.has-bg .history-table-wrap {
+  background: rgba(8, 8, 16, 0.50);
+}
+
+/* Pull log row text — white over background images */
+html.has-bg .pl-type,
+html.has-bg .pl-banner,
+html.has-bg .pl-roll,
+html.has-bg .pl-date,
+html.has-bg .pl-pity {
+  color: #e8e9f0;
+}
+
+/* Banner panel dates — white over background images */
+html.has-bg .pl-bcard-date {
+  color: #d0d1de;
+}
+
+/* "shown" label + total-pulls count in the filter bar */
+html.has-bg .pl-filter-right {
+  color: #e8e9f0;
+}
+html.has-bg .pl-stat-n {
+  color: #ffffff;
+}
+
+/* Header row labels and stat elements — filter: drop-shadow matches the nav tab underline treatment.
+   Applied to .pl-stat (not .pl-stat-n) to avoid double-shadowing nested spans. */
+html.has-bg .pl-header-row span,
+html.has-bg .pl-stat {
+  text-shadow:
+    0 1px 6px rgba(0, 0, 0, 1),
+    0 1px 6px rgba(0, 0, 0, 1),
+    0 1px 8px rgba(0, 0, 0, 1),
+    0 1px 8px rgba(0, 0, 0, 1),
+    0 2px 14px rgba(0, 0, 0, 0.9);
+}

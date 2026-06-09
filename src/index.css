@@ -1,0 +1,150 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --bg-base:       #0f0f13;
+  --bg-surface:    #16161d;
+  --bg-elevated:   #1e1e28;
+  --bg-hover:      #25252f;
+  --border:        #2a2a38;
+  --border-bright: #3a3a50;
+
+  --text-primary:   #e8e8f0;
+  --text-secondary: #ffffff;
+  --text-muted:     #666666;
+
+  --accent:         #7c6af7;
+  --accent-dim:     #3d3580;
+  --accent-glow:    rgba(124, 106, 247, 0.15);
+
+  --danger:         #e05c6e;
+  --success:        #4ecb8d;
+  --warning:        #f0a854;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --font-ui:   'Syne', sans-serif;
+  --font-mono: 'DM Sans', sans-serif;
+
+  /* Background / glass system (overridden when html.has-bg is set) */
+  --panel-bg:              var(--bg-surface);
+  --panel-border:          var(--border);
+  --sidebar-bg:            var(--bg-surface);
+  --sidebar-border-right:  var(--border);
+  --titlebar-bg:           var(--bg-base);
+
+  --cur-default: url('./assets/cursors/cursor-default.svg') 3 3, default;
+  --cur-pointer: url('./assets/cursors/cursor-pointer.svg') 3 3, pointer;
+}
+
+/* OS cursor is hidden everywhere — the sparkle is rendered as an HTML element
+   via useSoftwareCursor() so DWM cannot override it in the window edge strip. */
+* { cursor: none !important; }
+
+/* ─── Glass overrides when a background image is active ─────────────────────── */
+html.has-bg {
+  --panel-bg:             rgba(13, 13, 20, 0.68);
+  --panel-border:         rgba(255, 255, 255, 0.10);
+  --sidebar-bg:           rgba(6, 6, 11, 0.78);
+  --sidebar-border-right: rgba(255, 255, 255, 0.06);
+  --titlebar-bg:          transparent;
+
+  /* Boost text contrast over any background */
+  --text-primary:   #f2f2fa;
+  --text-secondary: #ffffff;
+  --text-muted:     #B7B7B7;
+}
+
+html.has-bg[data-theme="light"] {
+  --panel-bg:             rgba(240, 240, 248, 0.72);
+  --panel-border:         rgba(0, 0, 0, 0.12);
+  --sidebar-bg:           rgba(228, 228, 238, 0.85);
+  --sidebar-border-right: rgba(0, 0, 0, 0.08);
+  --titlebar-bg:          transparent;
+
+  /* Boost text contrast for light mode over background */
+  --text-primary:   #04040a;
+  --text-secondary: #282828;
+  --text-muted:     #595959;
+}
+
+/* ─── Light theme (Discord-inspired) ────────────────────────────────────────── */
+:root[data-theme="light"] {
+  --bg-base:       #ffffff;
+  --bg-surface:    #f2f3f5;
+  --bg-elevated:   #e9eaeb;
+  --bg-hover:      #d8dadd;
+  --border:        #e3e5e8;
+  --border-bright: #c4c9d4;
+
+  --text-primary:   #060607;
+  --text-secondary: #565656;
+  --text-muted:     #8C8C8C;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Keep html dark so Chromium never shows white before body paints.
+   Previously transparent so the old transparent:true BrowserWindow could show the desktop
+   through corners, but BrowserWindow is now transparent:false with backgroundColor:#0f0f13.
+   DWM rounded corners clip the actual window shape at OS level — corner pixels are already
+   transparent to the desktop regardless of what CSS fills them with. */
+html {
+  background: #0f0f13 !important;
+}
+
+/* clip-path is the only reliable way to clip the body's background to a rounded shape
+   in Chromium. overflow:hidden on the root html element is transferred to the viewport
+   (for scroll behaviour) and never applied as a clip on the element itself — so
+   html { overflow:hidden; border-radius } does nothing visible. clip-path has no such
+   propagation rule; it always clips the element it's declared on. */
+body {
+  clip-path: inset(0 round 10px);
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+button {
+  font-family: var(--font-ui);
+  cursor: var(--cur-pointer);
+  border: none;
+  outline: none;
+}
+
+input, select, textarea {
+  font-family: var(--font-ui);
+  outline: none;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-track-piece {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-bright);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}

@@ -1,0 +1,265 @@
+.homepage {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: transparent; /* shared app-bg-layer provides the background */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* TitleBar sits outside .homepage-content so it never fades with the content */
+.homepage .title-bar {
+  width: 100%;
+  align-self: stretch;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+/* Animations target .homepage-content so the TitleBar above it stays visible */
+
+/* Short fade-in on home-button return — starts after tracker is 67% faded out */
+.homepage--returning .homepage-content {
+  animation: homepageFadeIn 0.3s ease;
+}
+
+@keyframes homepageFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Exit: content fades out — 0.3s so tracker fades in at the 67% mark */
+.homepage--exiting .homepage-content {
+  animation: homepageFadeOut 0.3s ease-in forwards;
+}
+
+@keyframes homepageFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+
+/* ─── Content block ─────────────────────────────────────────────────────────── */
+
+.homepage-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  /* padding-top is the home position and never changes in layout —
+     the loading offset is applied via transform so the slide animation
+     runs on the compositor thread (GPU) and cannot be interrupted by JS. */
+  padding-top: 18vh;
+}
+
+/* Entering + loading: title stays at viewport center throughout.
+   Formula: TitleBar(44px) + padding-top(18vh) + translateY + title-half(17px) = 50vh
+   → translateY = 32vh - 61px.
+   No intermediate movement — title only moves once loading completes (arriving phase). */
+.homepage-content--entering {
+  transform: translateY(calc(32vh - 61px));
+}
+
+/* Arriving phase — slide up to home position (translateY 0 = padding-top: 18vh base).
+   transform transitions run on the compositor thread — immune to main-thread activity. */
+.homepage-content--arriving {
+  transform: translateY(0);
+  transition: transform 0.85s cubic-bezier(0.75, 0, 0.05, 1);
+}
+
+/* ─── Title ─────────────────────────────────────────────────────────────────── */
+
+.homepage-title {
+  font-family: var(--font-ui, system-ui, sans-serif);
+  font-size: 28px;
+  font-weight: 300;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-primary, #e8e8f0);
+  opacity: 0;
+  transform: translateY(14px);
+  user-select: none;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* Static: fully visible, no translate — used during loading/arriving phases */
+.homepage-title--static {
+  opacity: 0.9;
+  transform: none;
+  transition: none;
+}
+
+/* Visible: slides up and fades in — used for home-button re-entry */
+.homepage-title--visible {
+  opacity: 0.9;
+  transform: translateY(0);
+}
+
+/* Brighter text + shadow when a background image is behind */
+.homepage--has-bg .homepage-title--visible,
+.homepage--has-bg .homepage-title--static {
+  color: #f2f3f5;
+  text-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.85),
+    0 2px 10px rgba(0, 0, 0, 0.70);
+}
+
+/* Exit: fade out in place — no upward movement */
+.homepage-title--exit {
+  opacity: 0 !important;
+  transform: translateY(0) !important;
+}
+
+/* ─── Progress bar ──────────────────────────────────────────────────────────── */
+
+/* Absolutely positioned — sits below the centered title throughout entering + loading,
+   stays fixed while the title slides up to home on arrival.
+   Title center is at 50vh; title bottom = 50vh + 17px; bar top = 50vh + 25px (8px gap). */
+.homepage-loading-bar-wrap {
+  position: absolute;
+  top: calc(50vh + 25px);
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: 260px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  overflow: hidden;
+  opacity: 0;
+  z-index: 2;
+}
+
+.homepage-loading-bar-wrap--visible {
+  opacity: 1;
+}
+
+/* Expand: dot → circle → full bar (entrance animation, reverse of collapse without overshoot).
+   Delayed by 0.5s so the title finishes sliding to the loading position first. */
+.homepage-loading-bar-wrap--entering {
+  overflow: visible;
+  /* fill-mode: both — applies the initial keyframe (opacity:0, scale:0) DURING the
+     0.5s delay, so the bar stays invisible until the animation actually starts. */
+  animation: barExpand 0.9s 0.5s both;
+}
+
+@keyframes barExpand {
+  /* True inverse of barCollapse (without the 2.5× overshoot):
+     collapse spends 27% shrinking dot→nothing (ease-out) and 48% sweeping bar→circle (ease-out).
+     Expand mirrors those proportions and inverts ease-out → ease-in:
+       0–27%:  nothing → circle  (ease-in — slow start, accelerates: inverse of ease-out disappear)
+       27–100%: circle → full bar (ease-in — slow start, accelerates: inverse of ease-out inward sweep) */
+  0% {
+    clip-path: inset(0% calc(50% - 4px) 0% calc(50% - 4px) round 4px);
+    transform: scale(0);
+    opacity: 0;
+    animation-timing-function: ease-in;
+  }
+  /* 27% = mirrors the 27% (73–100%) disappear phase of collapse */
+  27% {
+    clip-path: inset(0% calc(50% - 4px) 0% calc(50% - 4px) round 4px);
+    transform: scale(1);
+    opacity: 1;
+    animation-timing-function: ease-in;
+  }
+  /* 100% = full bar — mirrors the 48% (0–48%) inward sweep of collapse */
+  100% {
+    clip-path: inset(0% 0% 0% 0% round 4px);
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Collapse: ends move inward → circle → zoom up to 2.5× → hold → disappear */
+.homepage-loading-bar-wrap--collapsing {
+  opacity: 1;
+  overflow: visible; /* allow scale(2.5) to breathe outside bounds */
+  animation: barCollapse 0.9s forwards;
+}
+
+@keyframes barCollapse {
+  /* 0–48%: ends sweep inward (ease-out — fast start, slow finish) */
+  0% {
+    clip-path: inset(0% 0% 0% 0% round 4px);
+    transform: scale(1);
+    animation-timing-function: ease-out;
+  }
+  48% {
+    /* ends have met — circle (8px wide = height) */
+    clip-path: inset(0% calc(50% - 4px) 0% calc(50% - 4px) round 4px);
+    transform: scale(1);
+    animation-timing-function: ease-in;
+  }
+  /* 48–63%: zoom up to 2.5× (ease-in — accelerates into the peak) */
+  63% {
+    clip-path: inset(0% calc(50% - 4px) 0% calc(50% - 4px) round 4px);
+    transform: scale(2.5);
+    animation-timing-function: linear;
+  }
+  /* 63–73%: hold at full size */
+  73% {
+    clip-path: inset(0% calc(50% - 4px) 0% calc(50% - 4px) round 4px);
+    transform: scale(2.5);
+    animation-timing-function: ease-out;
+  }
+  /* 73–100%: collapse to nothing (ease-out — fast start, tapers off) */
+  100% {
+    clip-path: inset(0% calc(50% - 4px) 0% calc(50% - 4px) round 4px);
+    transform: scale(0);
+  }
+}
+
+.homepage-loading-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.22s ease-out;
+}
+
+/* ─── Offline message ───────────────────────────────────────────────────────── */
+
+.homepage-offline-msg {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  opacity: 0;
+  margin-top: -18px; /* tighten gap with bar */
+  transition: opacity 0.4s ease;
+}
+
+.homepage-offline-msg--visible {
+  opacity: 1;
+}
+
+/* ─── Enter button ──────────────────────────────────────────────────────────── */
+
+.homepage-enter-btn {
+  padding: 10px 32px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: var(--cur-pointer);
+  opacity: 0;
+  transition: opacity 0.4s ease, background 0.25s ease, color 0.25s ease;
+}
+
+.homepage-enter-btn--visible {
+  opacity: 1;
+}
+
+.homepage-enter-btn:not(:disabled):hover {
+  background: #fff;
+  color: var(--accent);
+}
+
+/* Exit: fade out alongside the title */
+.homepage-enter-btn--exit {
+  opacity: 0 !important;
+  transition: opacity 0.25s ease;
+}

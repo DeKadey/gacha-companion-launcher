@@ -1,0 +1,53 @@
+.title-bar {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  background: var(--titlebar-bg);
+  transition: background 0.3s ease;
+  /* No drag on the parent — drag lives only on .title-bar-drag so the OS
+     cursor override doesn't bleed into the controls area */
+  user-select: none;
+}
+
+.title-bar-drag {
+  flex: 1;
+  height: 100%;
+}
+
+/* Single always-mounted controls overlay — sits above both homepage and tracker */
+.title-bar-controls--fixed {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 44px;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  padding: 0 6px 0 4px;
+  gap: 2px;
+  pointer-events: auto;
+}
+
+.title-bar-controls {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 6px 0 4px;
+  gap: 2px;
+}
+
+.title-bar-btn {
+  width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  transition: background 0.12s, color 0.12s;
+}
+
+.title-bar-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.title-bar-btn--close:hover { background: var(--danger); color: #fff; }

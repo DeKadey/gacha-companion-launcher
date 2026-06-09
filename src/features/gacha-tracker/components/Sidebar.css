@@ -1,0 +1,557 @@
+/* ─── Layer 0: layout wrapper — the flex item, drives width for App layout ── */
+.sidebar-layout {
+  position: relative;
+  width: 220px;
+  min-width: 220px;
+  height: 100%;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.25s ease-in-out, min-width 0.25s ease-in-out;
+}
+
+.sidebar-border-right {
+  position: absolute;
+  top: 0; right: 0;
+  width: 1px;
+  height: 100%;
+  background: var(--sidebar-border-right);
+  z-index: 3;
+  transition: opacity 0.3s ease;
+}
+.sidebar-layout--collapsed {
+  width: 60px;
+  min-width: 60px;
+}
+
+/* ─── Layer 1: static background for the collapsed icon column ───────────── */
+.sidebar-base {
+  position: absolute;
+  left: 0; top: 0;
+  width: 60px;
+  height: 100%;
+  background: var(--sidebar-bg);
+  z-index: 0;
+  transition: opacity 0.3s ease;
+}
+html.has-bg .sidebar-base {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* ─── Layer 3: animated background panel for the extended area ───────────── */
+.sidebar-panel {
+  position: absolute;
+  left: 60px; top: 0;
+  width: 160px;
+  height: 100%;
+  background: var(--sidebar-bg);
+  will-change: clip-path;
+  z-index: 1;
+  transition: opacity 0.3s ease;
+}
+html.has-bg .sidebar-panel {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.sidebar-panel--expanding {
+  animation: sbPanelIn 0.25s ease-in-out both;
+}
+.sidebar-panel--collapsing {
+  animation: sbPanelOut 0.25s ease-in-out both;
+}
+
+@keyframes sbPanelIn {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0% 0 0); }
+}
+@keyframes sbPanelOut {
+  from { clip-path: inset(0 0% 0 0); }
+  to   { clip-path: inset(0 100% 0 0); }
+}
+
+/* ─── Layer 2: content layer — all actual UI, DnD lives here ─────────────── */
+.sidebar-content {
+  position: absolute;
+  left: 0; top: 0;
+  width: 220px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  z-index: 2;
+  transition: opacity 0.3s ease;
+}
+
+/* Header row: hamburger + home */
+.sidebar-header {
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+}
+
+/* Toggle button */
+.sidebar-toggle {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 60px;
+  padding: 17px 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: var(--cur-pointer);
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.sidebar-toggle:hover { color: var(--text-secondary); }
+
+/* Toggle shape — diamond by default (collapsed idle) */
+.sidebar-toggle-shape {
+  d: path('M 8 -1 L 17 8 L 8 17 L -1 8 Z');
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Expanded idle — square */
+.sidebar-toggle-shape--expanded {
+  d: path('M 1 1 L 15 1 L 15 15 L 1 15 Z');
+}
+
+/* Expanding — diamond → square, 360° clockwise */
+.sidebar-toggle-shape--expanding {
+  animation: toggleExpand 0.25s ease-in-out both;
+}
+
+/* Collapsing — square → diamond, 360° counter-clockwise */
+.sidebar-toggle-shape--collapsing {
+  animation: toggleCollapse 0.25s ease-in-out both;
+}
+
+@keyframes toggleExpand {
+  from { d: path('M 8 -1 L 17 8 L 8 17 L -1 8 Z'); transform: rotate(0deg); }
+  to   { d: path('M 1 1 L 15 1 L 15 15 L 1 15 Z'); transform: rotate(360deg); }
+}
+@keyframes toggleCollapse {
+  from { d: path('M 1 1 L 15 1 L 15 15 L 1 15 Z'); transform: rotate(0deg); }
+  to   { d: path('M 8 -1 L 17 8 L 8 17 L -1 8 Z'); transform: rotate(-360deg); }
+}
+
+/* Toggle hover outline — diamond by default (collapsed idle) */
+.sidebar-toggle-outline {
+  d: path('M 8 -5 L 21 8 L 8 21 L -5 8 Z');
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-linejoin: miter;
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.sidebar-toggle:hover .sidebar-toggle-outline { opacity: 1; }
+
+.sidebar-toggle-outline--expanded {
+  d: path('M -2 -2 L 18 -2 L 18 18 L -2 18 Z');
+}
+.sidebar-toggle-outline--expanding {
+  animation: toggleOutlineExpand 0.25s ease-in-out both;
+}
+.sidebar-toggle-outline--collapsing {
+  animation: toggleOutlineCollapse 0.25s ease-in-out both;
+}
+
+@keyframes toggleOutlineExpand {
+  from { d: path('M 8 -5 L 21 8 L 8 21 L -5 8 Z');     transform: rotate(0deg); }
+  to   { d: path('M -2 -2 L 18 -2 L 18 18 L -2 18 Z'); transform: rotate(360deg); }
+}
+@keyframes toggleOutlineCollapse {
+  from { d: path('M -2 -2 L 18 -2 L 18 18 L -2 18 Z'); transform: rotate(0deg); }
+  to   { d: path('M 8 -5 L 21 8 L 8 21 L -5 8 Z');     transform: rotate(-360deg); }
+}
+
+/* Home button — top-aligned with same top padding as toggle so icon top = first bar top */
+.sidebar-home {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 17px;
+  padding-left: 10px;
+  padding-right: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: var(--cur-pointer);
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.sidebar-home:hover { color: var(--text-secondary); }
+
+.sidebar-home-icon {
+  position: relative;
+  display: flex;
+}
+
+.sidebar-home-icon::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border: 2px solid var(--accent);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.sidebar-home:hover .sidebar-home-icon::after {
+  opacity: 1;
+}
+
+
+/* Fade elements in/out with the sidebar */
+.sidebar-layout--collapsed .sidebar-item-name,
+.sidebar-layout--collapsed .sidebar-item-indicator,
+.sidebar-layout--collapsed .sidebar-home,
+.sidebar-layout--collapsed .sidebar-kebab {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar-panel--expanding ~ .sidebar-content .sidebar-item-name,
+.sidebar-panel--expanding ~ .sidebar-content .sidebar-item-indicator,
+.sidebar-panel--expanding ~ .sidebar-content .sidebar-home,
+.sidebar-panel--expanding ~ .sidebar-content .sidebar-kebab {
+  animation: sbElFadeIn 0.15s ease-out both;
+}
+
+.sidebar-panel--collapsing ~ .sidebar-content .sidebar-item-name,
+.sidebar-panel--collapsing ~ .sidebar-content .sidebar-item-indicator,
+.sidebar-panel--collapsing ~ .sidebar-content .sidebar-home,
+.sidebar-panel--collapsing ~ .sidebar-content .sidebar-kebab {
+  animation: sbElFadeOut 0.15s ease-out both;
+}
+
+@keyframes sbElFadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sbElFadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* Nav */
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 8px 8px;
+  white-space: nowrap;
+}
+
+/* Each sortable row wraps the item button + kebab button */
+.sidebar-item-row {
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  position: relative;
+  isolation: isolate;
+  transition: background 0.12s;
+}
+
+/* Hover and active states live on the row so the full width (incl. kebab) is highlighted */
+.sidebar-item-row:hover {
+  background: var(--bg-hover);
+}
+
+.sidebar-item-row:hover .sidebar-item {
+  color: var(--text-primary);
+}
+
+/* Active background lives on ::before so it can be clip-path animated independently */
+.sidebar-item-row:has(.sidebar-item--active) {
+  background: transparent;
+}
+
+.sidebar-item-row:has(.sidebar-item--active)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent-glow);
+  border-radius: var(--radius-sm);
+  z-index: -1;
+  clip-path: inset(0 0px 0 0 round var(--radius-sm));
+  transition: clip-path 0.25s ease-in-out;
+}
+
+.sidebar-layout--collapsed .sidebar-item-row:has(.sidebar-item--active)::before {
+  clip-path: inset(0 160px 0 0 round var(--radius-sm));
+}
+
+/* Drag clone: lifted, scaled, cursor grab */
+.drag-clone {
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55);
+  border-radius: var(--radius-sm);
+  transform: scale(1.03);
+  cursor: var(--cur-pointer) !important;
+  background: var(--bg-elevated);
+}
+
+.drag-clone .sidebar-item {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+/* Sidebar items */
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.12s, color 0.12s;
+  cursor: var(--cur-pointer);
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  position: relative;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-item--active {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.sidebar-item--footer { color: var(--text-muted); border-radius: var(--radius-sm); }
+.sidebar-item--footer:hover { background: var(--bg-hover); color: var(--text-secondary); }
+.sidebar-item--footer.sidebar-item--active { background: var(--accent-glow); color: var(--text-primary); }
+
+.sidebar-item-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.sidebar-item-icon--muted {
+  background: var(--bg-elevated) !important;
+  color: var(--text-muted);
+}
+
+.sidebar-item-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sidebar-item-indicator {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.sidebar-bin-count {
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 10px;
+  font-family: var(--font-mono);
+}
+
+.sidebar-item-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+/* Kebab (3-dot) button inside the row */
+.sidebar-kebab {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-right: 4px;
+  transition: background 0.12s, color 0.12s;
+}
+
+.sidebar-kebab:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Footer */
+.sidebar-footer {
+  padding: 8px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Button shell — no background, no flex, just a positioned container */
+.sidebar-add {
+  position: relative;
+  height: 32px;
+  background: transparent;
+  color: #060607;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: var(--cur-pointer);
+  transition: opacity 0.15s;
+}
+:root[data-theme="light"] .sidebar-add { color: #e8e8f0; }
+.sidebar-add:hover { opacity: 0.82; }
+
+/* Background layer — clip-path animates exactly like the sidebar panel */
+.sidebar-add::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #f2f3f5;
+  border-radius: var(--radius-sm);
+}
+:root[data-theme="light"] .sidebar-add::before { background: #16161d; }
+
+/* + icon — own layer, animates left/right independently */
+.sidebar-add-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 60px;
+  display: flex;
+  align-items: center;
+  z-index: 1;
+}
+
+/* Text — own layer, fades in/out independently */
+.sidebar-add-text {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 84px; /* icon left (60) + icon width (16) + gap (8) */
+  white-space: nowrap;
+  z-index: 1;
+}
+
+/* ── Idle collapsed ── */
+.sidebar-add--idle-collapsed::before {
+  clip-path: inset(0 160px 0 0 round var(--radius-sm));
+}
+.sidebar-add--idle-collapsed .sidebar-add-icon { left: 14px; }
+.sidebar-add--idle-collapsed .sidebar-add-text { display: none; }
+
+/* ── Collapsing 0.3s ── */
+.sidebar-add--collapsing::before {
+  animation: addBgCollapse 0.25s ease-in-out both;
+}
+.sidebar-add--collapsing .sidebar-add-icon {
+  animation: addIconCollapse 0.25s ease-in-out both;
+}
+.sidebar-add--collapsing .sidebar-add-text {
+  animation: addTextOut 0.10s ease-out both;
+}
+
+/* ── Expanding 0.35s ── */
+.sidebar-add--expanding::before {
+  animation: addBgExpand 0.25s ease-in-out both;
+}
+.sidebar-add--expanding .sidebar-add-icon {
+  animation: addIconExpand 0.25s ease-in-out both;
+}
+.sidebar-add--expanding .sidebar-add-text {
+  animation: addTextIn 0.15s ease-out both;
+  animation-delay: 0.1s;
+}
+
+@keyframes addBgCollapse {
+  from { clip-path: inset(0 0px   0 0 round var(--radius-sm)); }
+  to   { clip-path: inset(0 160px 0 0 round var(--radius-sm)); }
+}
+@keyframes addBgExpand {
+  from { clip-path: inset(0 160px 0 0 round var(--radius-sm)); }
+  to   { clip-path: inset(0 0px   0 0 round var(--radius-sm)); }
+}
+@keyframes addIconCollapse {
+  from { left: 60px; }
+  to   { left: 14px; }
+}
+@keyframes addIconExpand {
+  from { left: 14px; }
+  to   { left: 60px; }
+}
+@keyframes addTextOut {
+  from { opacity: 1; left: 84px; }
+  to   { opacity: 0; left: 64px; }
+}
+@keyframes addTextIn {
+  from { opacity: 0; left: 64px; }
+  to   { opacity: 1; left: 84px; }
+}
+
+/* ─── Kebab popup (rendered via portal, position: fixed) ─────────────────── */
+
+.kebab-popup {
+  position: fixed;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: kebabIn 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: top left;
+}
+
+@keyframes kebabIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.kebab-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: transparent;
+  text-align: left;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+
+.kebab-option:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.kebab-option--danger { color: var(--danger); }
+.kebab-option--danger:hover { background: rgba(224, 92, 110, 0.1); }

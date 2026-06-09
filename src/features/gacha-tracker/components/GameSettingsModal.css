@@ -1,0 +1,657 @@
+.gs-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  border-radius: 10px; /* position:fixed escapes body's clip-path — self-clip to window shape */
+  overflow: hidden;
+}
+
+/* ─── Backdrop — covers full screen including behind the panel ────────────────── */
+
+.gs-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  cursor: var(--cur-pointer);
+  background: rgba(0, 0, 0, 0.55);
+  animation: gsBackdropIn 0.35s ease forwards;
+  will-change: opacity;
+}
+
+.gs-modal--closing .gs-backdrop {
+  animation: gsBackdropOut 0.35s ease forwards;
+}
+
+@keyframes gsBackdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes gsBackdropOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* ─── Panel — sits above backdrop ─────────────────────────────────────────────── */
+
+.gs-panel {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 400px;
+  height: 100%;
+  z-index: 1;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border);
+  overflow: hidden;
+  /* clip-path reveals the panel from the right edge leftward.
+     The panel itself never leaves the viewport, so Chromium never evicts
+     its compositing layer tiles — no partial-render pop on slide-in.
+     will-change: clip-path promotes the clip to the compositor thread so it
+     stays frame-synced with the inner's translateX (also compositor). */
+  will-change: clip-path;
+  animation: gsPanelClipIn 0.35s ease-out both;
+}
+
+.gs-panel--closing {
+  animation: gsPanelClipOut 0.35s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+/* gs-panel-inner: contains all visible UI and performs the translateX slide.
+   Because its layout position is always within the viewport, Chromium keeps
+   all tiles rasterized — the animation moves the GPU texture, not re-paints it. */
+.gs-panel-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  animation: gsSlideIn 0.35s ease-out both;
+  will-change: transform;
+}
+
+.gs-panel-inner--closing {
+  animation: gsSlideOut 0.35s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+html.has-bg .gs-panel {
+  background: rgba(10, 10, 16, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-left-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Panel clip — sweeps the visible boundary from the viewport right edge leftward.
+   Synchronized with gsSlideIn on the inner div: at every frame, the clip boundary
+   and the inner's leading edge are at the same position, so the effect is
+   mathematically identical to a full translateX slide with no off-screen geometry. */
+@keyframes gsPanelClipIn {
+  from { clip-path: inset(0 0 0 100%); }
+  to   { clip-path: inset(0 0 0 0%); }
+}
+
+@keyframes gsPanelClipOut {
+  from { clip-path: inset(0 0 0 0%); }
+  to   { clip-path: inset(0 0 0 100%); }
+}
+
+/* Inner content slide — translates within the panel's overflow:hidden bounds.
+   The inner's layout position is always in-viewport, so tiles are never evicted. */
+@keyframes gsSlideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes gsSlideOut {
+  from { transform: translateX(0); }
+  to   { transform: translateX(100%); }
+}
+
+/* ─── Header ──────────────────────────────────────────────────────────────────── */
+
+.gs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.gs-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.gs-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: var(--cur-pointer);
+  transition: background 0.12s, color 0.12s;
+}
+.gs-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+/* ─── Body ────────────────────────────────────────────────────────────────────── */
+
+.gs-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.gs-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gs-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.gs-field-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ─── Drop zone ───────────────────────────────────────────────────────────────── */
+
+.gs-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 2px dashed var(--border-bright);
+  border-radius: var(--radius-md);
+  padding: 32px 16px;
+  cursor: var(--cur-pointer);
+  transition: border-color 0.15s, background 0.15s;
+  color: var(--text-muted);
+}
+.gs-dropzone:hover,
+.gs-dropzone--drag {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  color: var(--text-secondary);
+}
+
+.gs-dropzone--compact {
+  flex-direction: row;
+  padding: 10px 14px;
+  gap: 6px;
+  border-width: 1px;
+  flex: 1;
+}
+
+.gs-dropzone-icon { flex-shrink: 0; }
+
+.gs-dropzone-text {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ─── Background preview ──────────────────────────────────────────────────────── */
+
+.gs-bg-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Wrap: defines the 160px slot, border and radius. Children stack inside it. */
+.gs-bg-img-wrap {
+  position: relative;
+  width: 100%;
+  height: 160px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* Placeholder sits as the bottom layer — always visible so the fade goes
+   from #1E1E28 → image with no dark gap. */
+.gs-bg-placeholder {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-elevated);
+}
+
+.gs-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Fades in over the placeholder after the panel has settled */
+.gs-bg-img--reveal {
+  opacity: 0;
+  animation: gsBgReveal 0.75s ease both;
+}
+
+@keyframes gsBgReveal {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.gs-bg-actions {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.gs-remove-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: var(--cur-pointer);
+  font-family: var(--font-ui);
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+.gs-remove-btn:hover { background: rgba(224, 92, 110, 0.1); }
+
+/* ─── Select ──────────────────────────────────────────────────────────────────── */
+
+.gs-select {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 9px 32px 9px 12px;
+  font-size: 14px;
+  width: 100%;
+  cursor: var(--cur-pointer);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238888a8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: border-color 0.15s;
+  font-family: var(--font-ui);
+}
+.gs-select:focus { border-color: var(--accent); outline: none; }
+.gs-select option { background: var(--bg-elevated); color: var(--text-primary); }
+
+/* ─── Features list ───────────────────────────────────────────────────────────── */
+
+.gs-features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gs-feature-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.gs-feature-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.gs-feature-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.gs-feature-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.gs-feature-item--danger {
+  border-color: rgba(224, 92, 110, 0.3);
+}
+
+.gs-clear-btn {
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--danger);
+  background: transparent;
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: var(--cur-pointer);
+  font-family: var(--font-ui);
+  transition: background 0.12s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.gs-clear-btn:hover:not(:disabled) { background: rgba(224, 92, 110, 0.1); }
+.gs-clear-btn:disabled { opacity: 0.35; cursor: var(--cur-default); }
+
+/* ─── UID field ───────────────────────────────────────────────────────────────── */
+
+.gs-uid-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gs-uid-input {
+  flex: 1;
+  height: 32px;
+  padding: 0 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-ui);
+  transition: border-color 0.15s;
+}
+.gs-uid-input:focus { border-color: var(--accent); outline: none; }
+.gs-uid-input--error { border-color: #e05555 !important; }
+.gs-uid-input::placeholder { color: var(--text-muted); }
+
+.gs-uid-error {
+  font-size: 11px;
+  color: #e05555;
+  margin-top: 4px;
+  width: 100%;
+}
+
+.gs-uid-value {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  font-family: var(--font-mono, monospace);
+}
+
+.gs-uid-save-btn {
+  padding: 4px 14px;
+  height: 32px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: var(--cur-pointer);
+  white-space: nowrap;
+  transition: opacity 0.12s;
+  flex-shrink: 0;
+}
+.gs-uid-save-btn:hover:not(:disabled) { opacity: 0.85; }
+.gs-uid-save-btn:disabled { opacity: 0.35; cursor: var(--cur-default); }
+
+.gs-uid-edit-btn {
+  padding: 4px 14px;
+  height: 32px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: var(--cur-pointer);
+  white-space: nowrap;
+  transition: border-color 0.12s, color 0.12s;
+  flex-shrink: 0;
+}
+.gs-uid-edit-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.gs-uid-edit-btn:disabled { opacity: 0.35; cursor: var(--cur-default); }
+
+
+.gs-toggle-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: var(--cur-pointer);
+  flex-shrink: 0;
+}
+
+.gs-toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.gs-toggle-track {
+  display: inline-block;
+  width: 34px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--bg-base);
+  border: 1.5px solid var(--border);
+  transition: background 0.2s, border-color 0.2s;
+  position: relative;
+}
+
+.gs-toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform 0.2s, background 0.2s;
+}
+
+.gs-toggle-input:checked + .gs-toggle-track::after {
+  transform: translateX(16px);
+  background: #fff;
+}
+
+/* ─── Pull History import ─────────────────────────────────────────────────────── */
+
+.gs-import-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gs-import-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: var(--cur-pointer);
+  font-family: var(--font-ui);
+  transition: background 0.12s, border-color 0.12s;
+  width: 100%;
+  justify-content: center;
+}
+
+.gs-import-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.gs-import-btn:disabled {
+  opacity: 0.5;
+  cursor: var(--cur-default);
+}
+
+.gs-import-btn--sync {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.gs-import-btn--sync:hover:not(:disabled) {
+  background: var(--accent-glow);
+}
+
+.gs-import-btn--cancel {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.gs-import-btn--cancel:hover {
+  background: rgba(224, 92, 110, 0.1);
+}
+
+.gs-import-status {
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+}
+
+.gs-import-status--loading {
+  background: var(--bg-elevated);
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+
+.gs-import-status--success {
+  background: rgba(78, 203, 141, 0.08);
+  border-color: rgba(78, 203, 141, 0.3);
+  color: #4ecb8d;
+}
+
+.gs-import-status--error {
+  background: rgba(224, 92, 110, 0.08);
+  border-color: rgba(224, 92, 110, 0.3);
+  color: var(--danger);
+}
+
+/* spinning icon for sync button */
+@keyframes gsSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.gs-spin {
+  animation: gsSpin 0.9s linear infinite;
+}
+
+/* ─── Import file indicators ───────────────────────────────────────────────── */
+
+.gs-import-indicators {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.gs-import-indicator {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: var(--radius-sm);
+  border: 1px solid;
+}
+
+.gs-import-indicator--ok {
+  background: rgba(78, 203, 141, 0.1);
+  border-color: rgba(78, 203, 141, 0.35);
+  color: #4ecb8d;
+}
+
+.gs-import-indicator--missing {
+  background: var(--bg-elevated);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+/* ─── Mismatch confirm dialog ──────────────────────────────────────────────── */
+
+.gs-mismatch-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: inherit;
+}
+
+.gs-mismatch-dialog {
+  background: var(--bg-surface);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  padding: 24px 28px;
+  max-width: 320px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.gs-mismatch-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.gs-mismatch-body {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.gs-mismatch-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.gs-mismatch-btn {
+  padding: 7px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: var(--cur-pointer);
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.gs-mismatch-btn--cancel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.gs-mismatch-btn--cancel:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+.gs-mismatch-btn--proceed {
+  background: var(--danger);
+  border: 1px solid var(--danger);
+  color: #fff;
+}
+.gs-mismatch-btn--proceed:hover { opacity: 0.85; }

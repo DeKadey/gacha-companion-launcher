@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gacha Tracker</title>
+    <!-- Preconnect so the font request starts as early as possible -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Load Syne (including weight 300 so the title renders correctly) before React boots.
+         display=block keeps text invisible until the font is ready — no fallback-font flash. -->
+    <!-- display=swap: text renders immediately in system-ui fallback, then swaps to Syne
+         when the font is ready. display=block would hide text for up to 3s on slow/cold loads. -->
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Applied before any external CSS loads.
+         html must be transparent so the transparent Electron window shows through.
+         body gets the dark background + clip-path so corners are rounded from frame 0. -->
+    <style>
+      /* Dark background on html root — fills the window from frame 0, before body paints.
+         body uses clip-path for rounded corners; html provides the fallback fill so there
+         is never a transparent frame, even if clip-path rasterizes one frame late. */
+      html { background: #0f0f13; }
+      body {
+        background: #0f0f13;
+        clip-path: inset(0 round 10px);
+        margin: 0;
+        padding: 0;
+      }
+      /* Pre-React title — matches .homepage-title exactly.
+         Shown as soon as the Syne font is ready (via document.fonts.ready below).
+         React hides this element the moment it mounts and renders its own title
+         at the same position, making the handoff invisible. */
+      #pre-title {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-family: 'Syne', system-ui, sans-serif;
+        font-size: 28px;
+        font-weight: 300;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #e8e8f0;
+        /* Visible immediately — no font-loading gate. System-ui fallback renders
+           instantly; Syne loads in the background. React hides this element
+           the moment it mounts, so any brief font-swap is imperceptible. */
+        opacity: 0.9;
+        user-select: none;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Shown immediately, before React parses its JS bundle -->
+    <div id="pre-title">Gacha Companion</div>
+    <div id="root"></div>
+  </body>
+</html>
