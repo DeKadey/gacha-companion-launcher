@@ -61,7 +61,8 @@
     "publish": {
       "provider": "github",
       "owner": "DeKadey",
-      "repo": "gacha-companion-launcher"
+      "repo": "gacha-companion-launcher",
+      "releaseType": "release"
     },
     "win": {
       "target": [
