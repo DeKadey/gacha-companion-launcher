@@ -1,6 +1,6 @@
 {
   "name": "gacha-companion",
-  "version": "4.17.18",
+  "version": "1.0.0",
   "description": "Personal gacha game companion",
   "main": "electron/main.js",
   "homepage": "./",
