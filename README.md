@@ -9,14 +9,14 @@ https://github.com/DeKadey/gacha-companion
 (I don't know if it's better to have it separate or all in one, but given how things go with AI, I thought it's less risky to have it in its own repository)
 
 Should you want to use this, I recommend continue to use websites like Paimon.moe, Starrailstation and zzz.rng.moe, as I cannot guarantee that everything will work 100% of the time.
-https://paimon.moe/wish
-https://starrailstation.com/en/warp#global
-https://zzz.rng.moe/en/tracker
+- `https://paimon.moe/wish`
+- `https://starrailstation.com/en/warp#global`
+- `https://zzz.rng.moe/en/tracker`
 
 I will make a log of changes, but for now, we're in V1.0.0. It contains the basic history fetching for all 3 games and ability to import the 3 aforementioned websites via their exports.
 V2.0.0 is currently a WIP, I'm working on my own showcase (like enka.network) for all 3 games. (It's a struggle, I cannot stress enough how painful it is to try to find solutions that other people who are into code can actually fix within minutes)
 
--- Installation Guide --
+- Installation Guide -
 
 **Installing**
 1. Download GachaCompanion-Setup.exe from the website
