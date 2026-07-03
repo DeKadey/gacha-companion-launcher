@@ -16,6 +16,7 @@ const path = require('path');
 
 const { downloadCharAssets, listManifestIds } = require('./downloader');
 const { computeFraming } = require('./live2dFraming');
+const { getAnimatedBounds } = require('./live2dFaceDetect');
 
 const ASSET_DIR  = path.resolve(process.env.ASSET_CACHE_DIR ?? path.join(__dirname, '..', '.framing-cache', 'assets'));
 const ONNX_PATH  = path.resolve(process.env.ONNX_MODEL_PATH ?? path.join(__dirname, '..', '.framing-cache', 'yolov8_animeface.onnx'));
@@ -51,7 +52,11 @@ async function processGame(game) {
   let   changed = false;
 
   for (const id of ids) {
-    if (data[id]) {
+    const existing  = data[id];
+    const hasAnchor = !!existing && existing.cx !== undefined;
+    const hasBounds = !!existing && existing.topY !== undefined && existing.bottomY !== undefined;
+
+    if (hasAnchor && hasBounds) {
       console.log(`  [${id}] cached — skip`);
       continue;
     }
@@ -62,17 +67,32 @@ async function processGame(game) {
       process.stdout.write(` skip (${dl.reason ?? dl.error})\n`);
       continue;
     }
-    process.stdout.write(` computing framing…`);
 
-    const result = await computeFraming(dl.dir, dl.bases, id, ONNX_PATH, game).catch((e) => {
+    if (!hasAnchor) {
+      // No cached anchor (new character, or never computed) — full compute, gets both anchor + bounds.
+      process.stdout.write(` computing framing…`);
+      const result = await computeFraming(dl.dir, dl.bases, id, ONNX_PATH, game).catch((e) => {
+        process.stdout.write(` ERROR: ${e.message}\n`);
+        return null;
+      });
+      if (!result) continue;
+      data[id] = result;
+      changed = true;
+      process.stdout.write(` done (cx=${result.cx.toFixed(0)}, cy=${result.cy.toFixed(0)})\n`);
+      continue;
+    }
+
+    // Anchor already cached, just missing the bounds — backfill only that (cheap:
+    // skeleton pose + getBounds, no atlas/skin scan, no face-detect render/inference).
+    process.stdout.write(` backfilling bounds…`);
+    const bounds = await getAnimatedBounds(dl.dir, dl.bases).catch((e) => {
       process.stdout.write(` ERROR: ${e.message}\n`);
       return null;
     });
-
-    if (!result) continue;
-    data[id] = result;
+    if (!bounds) continue;
+    data[id] = { ...existing, ...bounds };
     changed = true;
-    process.stdout.write(` done (cx=${result.cx.toFixed(0)}, cy=${result.cy.toFixed(0)})\n`);
+    process.stdout.write(` done (topY=${bounds.topY.toFixed(0)}, bottomY=${bounds.bottomY.toFixed(0)})\n`);
   }
 
   const version = changed ? existing.version + 1 : existing.version;
