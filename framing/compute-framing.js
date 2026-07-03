@@ -95,7 +95,13 @@ async function processGame(game) {
     process.stdout.write(` done (topY=${bounds.topY.toFixed(0)}, bottomY=${bounds.bottomY.toFixed(0)})\n`);
   }
 
-  const version = changed ? existing.version + 1 : existing.version;
+  // Always bump the version on a successful run (even if nothing changed for
+  // this game) — a run failure throws before reaching here, so this only ever
+  // advances on success. Needed because framing_version.json is one combined
+  // number shared by both games: if only one game's version ever moved, the
+  // other game's real updates could be masked by the shared number not
+  // increasing, and framingSync would wrongly skip re-downloading it.
+  const version = existing.version + 1;
   saveOutput(game, version, data);
   console.log(`  ${game}: version=${version}, entries=${Object.keys(data).length}, changed=${changed}`);
   return { version, changed };
