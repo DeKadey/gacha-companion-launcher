@@ -5,7 +5,7 @@
 
 const fs   = require('fs');
 const path = require('path');
-const { detectFaces } = require('./live2dFaceDetect');
+const { detectFaces, getAnimatedBounds } = require('./live2dFaceDetect');
 
 const HEAD_TOKENS = new Set(['face', 'lian', 'mian', 'tou', 'kao', 'head', 'atama', '脸', '面', '头', '颜', '颊']);
 const HAIR_RE = /发|髮|hair|刘海/i;
@@ -211,52 +211,62 @@ async function computeFraming(dir, bases, id, modelPath, game) {
         faceH: boneAnchors[0].faceH }
     : null;
 
-  if (modelPath) {
-    const boxes = await detectFaces(dir, bases, modelPath).catch(() => null);
-    if (boxes && boxes.length) {
-      const pick = boxes[0];
-      const result = { cx: pick.cx, cy: pick.cy, max, faceH: pick.h };
-      console.log(`[framing] ${id}: face-detect → cx=${result.cx.toFixed(0)} cy=${result.cy.toFixed(0)}`);
-      return result;
+  async function pickAnchor() {
+    if (modelPath) {
+      const boxes = await detectFaces(dir, bases, modelPath).catch(() => null);
+      if (boxes && boxes.length) {
+        const pick = boxes[0];
+        const result = { cx: pick.cx, cy: pick.cy, max, faceH: pick.h };
+        console.log(`[framing] ${id}: face-detect → cx=${result.cx.toFixed(0)} cy=${result.cy.toFixed(0)}`);
+        return result;
+      }
     }
-  }
 
-  if (eyePts.length >= 2) {
-    const sum = eyePts.reduce((a, p) => ({ x: a.x + p.x, y: a.y + p.y }), { x: 0, y: 0 });
-    const cx = sum.x / eyePts.length, cy = sum.y / eyePts.length;
-    const spreadX = Math.max(...eyePts.map(p => p.x)) - Math.min(...eyePts.map(p => p.x));
-    const faceH = boneAnchor?.faceH ?? (spreadX > 1 ? spreadX * 2.5 : h / 6);
-    console.log(`[framing] ${id}: eye-anchor → cx=${cx.toFixed(0)} cy=${cy.toFixed(0)}`);
-    return { cx, cy, max, faceH };
-  }
+    if (eyePts.length >= 2) {
+      const sum = eyePts.reduce((a, p) => ({ x: a.x + p.x, y: a.y + p.y }), { x: 0, y: 0 });
+      const cx = sum.x / eyePts.length, cy = sum.y / eyePts.length;
+      const spreadX = Math.max(...eyePts.map(p => p.x)) - Math.min(...eyePts.map(p => p.x));
+      const faceH = boneAnchor?.faceH ?? (spreadX > 1 ? spreadX * 2.5 : h / 6);
+      console.log(`[framing] ${id}: eye-anchor → cx=${cx.toFixed(0)} cy=${cy.toFixed(0)}`);
+      return { cx, cy, max, faceH };
+    }
 
-  if (skinPts.length && boneAnchor) {
-    const proxThreshY = h * 0.25;
-    const nearPts = skinPts.filter(p => Math.abs(p.y - boneAnchor.y) <= proxThreshY);
-    if (nearPts.length >= 3) {
-      const sum = nearPts.reduce((a, p) => ({ x: a.x + p.x, y: a.y + p.y }), { x: 0, y: 0 });
+    if (skinPts.length && boneAnchor) {
+      const proxThreshY = h * 0.25;
+      const nearPts = skinPts.filter(p => Math.abs(p.y - boneAnchor.y) <= proxThreshY);
+      if (nearPts.length >= 3) {
+        const sum = nearPts.reduce((a, p) => ({ x: a.x + p.x, y: a.y + p.y }), { x: 0, y: 0 });
+        const faceH = boneAnchor.faceH ?? h / 6;
+        const result = { cx: sum.x / nearPts.length, cy: sum.y / nearPts.length, max, faceH };
+        console.log(`[framing] ${id}: bone-Y+skin → cx=${result.cx.toFixed(0)} cy=${result.cy.toFixed(0)}`);
+        return result;
+      }
+    }
+
+    if (boneAnchor) {
       const faceH = boneAnchor.faceH ?? h / 6;
-      const result = { cx: sum.x / nearPts.length, cy: sum.y / nearPts.length, max, faceH };
-      console.log(`[framing] ${id}: bone-Y+skin → cx=${result.cx.toFixed(0)} cy=${result.cy.toFixed(0)}`);
-      return result;
+      console.log(`[framing] ${id}: bone-only → cx=${boneAnchor.x.toFixed(0)} cy=${boneAnchor.y.toFixed(0)}`);
+      return { cx: boneAnchor.x, cy: boneAnchor.y, max, faceH };
     }
+
+    const pts = head.length ? head : [];
+    if (pts.length) {
+      const sum = pts.reduce((a, p) => ({ x: a.x + p.x, y: a.y + p.y }), { x: 0, y: 0 });
+      console.log(`[framing] ${id}: head-token`);
+      return { cx: sum.x / pts.length, cy: sum.y / pts.length, max };
+    }
+
+    console.log(`[framing] ${id}: bounds-center`);
+    return { cx: minX + w / 2, cy: minY + h / 2, max };
   }
 
-  if (boneAnchor) {
-    const faceH = boneAnchor.faceH ?? h / 6;
-    console.log(`[framing] ${id}: bone-only → cx=${boneAnchor.x.toFixed(0)} cy=${boneAnchor.y.toFixed(0)}`);
-    return { cx: boneAnchor.x, cy: boneAnchor.y, max, faceH };
-  }
+  const anchor = await pickAnchor();
 
-  const pts = head.length ? head : [];
-  if (pts.length) {
-    const sum = pts.reduce((a, p) => ({ x: a.x + p.x, y: a.y + p.y }), { x: 0, y: 0 });
-    console.log(`[framing] ${id}: head-token`);
-    return { cx: sum.x / pts.length, cy: sum.y / pts.length, max };
-  }
-
-  console.log(`[framing] ${id}: bounds-center`);
-  return { cx: minX + w / 2, cy: minY + h / 2, max };
+  // Animated-pose top/bottom extent, for layouts that fit the character's
+  // body span between two fixed screen lines (ZZZ's 2-TV layout) rather than
+  // anchoring on the face alone. Independent of which anchor method above won.
+  const bounds = await getAnimatedBounds(dir, bases).catch(() => null);
+  return bounds ? { ...anchor, ...bounds } : anchor;
 }
 
 module.exports = { computeFraming };

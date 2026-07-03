@@ -116,6 +116,24 @@ async function renderPose(sc, dir, bases) {
   return { png: canvas.toBuffer('image/png'), cw, ch, scale, minX, minY, boneAnchor: computeBoneAnchor(mainSk) };
 }
 
+// Animated-pose vertical extent (world Y, up = positive) across all skeleton
+// parts. Cheap — just posing + skeleton.getBounds(), no canvas render/ONNX.
+// Used to fit the character's top/bottom exactly between two screen lines
+// (ZZZ's 2-TV layout), independent of whichever face-anchor method is used.
+async function getAnimatedBounds(dir, bases) {
+  const sc = await loadSpineCanvas();
+  let minY = Infinity, maxY = -Infinity;
+  for (const base of bases) {
+    const sk = await buildSkeleton(sc, dir, base);
+    const off = new sc.Vector2(), size = new sc.Vector2();
+    sk.getBounds(off, size, []);
+    minY = Math.min(minY, off.y);
+    maxY = Math.max(maxY, off.y + size.y);
+  }
+  if (!isFinite(minY)) return null;
+  return { topY: maxY, bottomY: minY };
+}
+
 function iou(a, b) {
   const ax1=a.cx-a.bw/2, ay1=a.cy-a.bh/2, ax2=a.cx+a.bw/2, ay2=a.cy+a.bh/2;
   const bx1=b.cx-b.bw/2, by1=b.cy-b.bh/2, bx2=b.cx+b.bw/2, by2=b.cy+b.bh/2;
@@ -175,4 +193,4 @@ async function detectFaces(dir, bases, modelPath) {
   return world;
 }
 
-module.exports = { detectFaces };
+module.exports = { detectFaces, getAnimatedBounds };
