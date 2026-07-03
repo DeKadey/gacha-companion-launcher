@@ -95,13 +95,7 @@ async function processGame(game) {
     process.stdout.write(` done (topY=${bounds.topY.toFixed(0)}, bottomY=${bounds.bottomY.toFixed(0)})\n`);
   }
 
-  // Always bump the version on a successful run (even if nothing changed for
-  // this game) — a run failure throws before reaching here, so this only ever
-  // advances on success. Needed because framing_version.json is one combined
-  // number shared by both games: if only one game's version ever moved, the
-  // other game's real updates could be masked by the shared number not
-  // increasing, and framingSync would wrongly skip re-downloading it.
-  const version = existing.version + 1;
+  const version = changed ? existing.version + 1 : existing.version;
   saveOutput(game, version, data);
   console.log(`  ${game}: version=${version}, entries=${Object.keys(data).length}, changed=${changed}`);
   return { version, changed };
@@ -121,10 +115,12 @@ async function main() {
     results[game] = await processGame(game);
   }
 
-  const maxVersion = Math.max(...Object.values(results).map((r) => r.version));
+  // Per-game versions, independent of each other — framingSync checks each
+  // game's own field only, so one game's version can never mask the other's.
+  const versions = Object.fromEntries(GAMES.map((game) => [game, results[game].version]));
   const versionFile = path.join(OUTPUT_DIR, 'framing_version.json');
-  fs.writeFileSync(versionFile, JSON.stringify({ version: maxVersion, generated: new Date().toISOString() }, null, 2));
-  console.log(`\nDone. Combined version=${maxVersion}`);
+  fs.writeFileSync(versionFile, JSON.stringify({ ...versions, generated: new Date().toISOString() }, null, 2));
+  console.log(`\nDone. Versions: ${JSON.stringify(versions)}`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
