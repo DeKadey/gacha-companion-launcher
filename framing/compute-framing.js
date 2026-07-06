@@ -1,26 +1,29 @@
 // Orchestrates full framing computation for all characters across all games.
 // Runs on GitHub Actions; outputs framing_hsr.json, framing_zzz.json, framing_version.json
+// (Live2D) and framing_hsr_png.json, framing_zzz_png.json, framing_version_png.json (PNG)
 // to the framing-output/ directory, then publishes them to a GitHub release.
 //
 // Usage: node framing/compute-framing.js
 //
 // Environment variables:
-//   ASSET_CACHE_DIR  — where to store downloaded spine assets (default: .framing-cache/assets)
-//   ONNX_MODEL_PATH  — path to yolov8_animeface.onnx (default: .framing-cache/yolov8_animeface.onnx)
-//   OUTPUT_DIR       — where to write framing_*.json (default: framing-output)
+//   ASSET_CACHE_DIR     — where to store downloaded spine assets (default: .framing-cache/assets)
+//   PNG_ASSET_CACHE_DIR — where to store downloaded character PNGs (default: .framing-cache/png-assets)
+//   ONNX_MODEL_PATH     — path to yolov8_animeface.onnx (default: .framing-cache/yolov8_animeface.onnx)
+//   OUTPUT_DIR          — where to write framing_*.json (default: framing-output)
 
 'use strict';
 
 const fs   = require('fs');
 const path = require('path');
 
-const { downloadCharAssets, listManifestIds } = require('./downloader');
+const { downloadCharAssets, listManifestIds, downloadPngAsset, listAllAvatarIds } = require('./downloader');
 const { computeFraming } = require('./live2dFraming');
-const { getAnimatedBounds } = require('./live2dFaceDetect');
+const { getAnimatedBounds, detectFaceOnImage } = require('./live2dFaceDetect');
 
-const ASSET_DIR  = path.resolve(process.env.ASSET_CACHE_DIR ?? path.join(__dirname, '..', '.framing-cache', 'assets'));
-const ONNX_PATH  = path.resolve(process.env.ONNX_MODEL_PATH ?? path.join(__dirname, '..', '.framing-cache', 'yolov8_animeface.onnx'));
-const OUTPUT_DIR = path.resolve(process.env.OUTPUT_DIR      ?? path.join(__dirname, '..', 'framing-output'));
+const ASSET_DIR     = path.resolve(process.env.ASSET_CACHE_DIR     ?? path.join(__dirname, '..', '.framing-cache', 'assets'));
+const PNG_ASSET_DIR = path.resolve(process.env.PNG_ASSET_CACHE_DIR ?? path.join(__dirname, '..', '.framing-cache', 'png-assets'));
+const ONNX_PATH     = path.resolve(process.env.ONNX_MODEL_PATH ?? path.join(__dirname, '..', '.framing-cache', 'yolov8_animeface.onnx'));
+const OUTPUT_DIR    = path.resolve(process.env.OUTPUT_DIR      ?? path.join(__dirname, '..', 'framing-output'));
 
 const GAMES = ['hsr', 'zzz'];
 
@@ -101,9 +104,78 @@ async function processGame(game) {
   return { version, changed };
 }
 
-async function main() {
-  fs.mkdirSync(ASSET_DIR,  { recursive: true });
+// ── PNG framing (separate from the Live2D pipeline above) ─────────────────────
+// No posing/rendering step — the downloaded image already IS the final frame,
+// so this is just download → detect → done. Covers every character in Enka's
+// roster (listAllAvatarIds), not just the ones with a Live2D rig, since PNG
+// mode works for all of them.
+
+function loadExistingPng(game) {
+  const file = path.join(OUTPUT_DIR, `framing_${game}_png.json`);
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+    return { version: parsed.version ?? 0, data: parsed.data ?? parsed };
+  } catch {
+    return { version: 0, data: {} };
+  }
+}
+
+function saveOutputPng(game, version, data) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+  fs.writeFileSync(
+    path.join(OUTPUT_DIR, `framing_${game}_png.json`),
+    JSON.stringify({ version, generated: new Date().toISOString(), data }, null, 2),
+  );
+}
+
+async function processGamePng(game) {
+  console.log(`\n=== ${game.toUpperCase()} (PNG) ===`);
+  const existing = loadExistingPng(game);
+  const ids = await listAllAvatarIds(game);
+  console.log(`  ${ids.length} characters in roster`);
+
+  const data    = { ...existing.data };
+  let   changed = false;
+
+  for (const id of ids) {
+    if (data[id] && data[id].cxFrac !== undefined) {
+      console.log(`  [${id}] cached — skip`);
+      continue;
+    }
+
+    process.stdout.write(`  [${id}] downloading PNG…`);
+    const dl = await downloadPngAsset(PNG_ASSET_DIR, game, id).catch((e) => ({ ok: false, error: e.message }));
+    if (!dl.ok) {
+      process.stdout.write(` skip (${dl.reason ?? dl.error})\n`);
+      continue;
+    }
+
+    process.stdout.write(` detecting face…`);
+    const boxes = await detectFaceOnImage(fs.readFileSync(dl.path), ONNX_PATH).catch((e) => {
+      process.stdout.write(` ERROR: ${e.message}\n`);
+      return null;
+    });
+    if (!boxes || !boxes.length) {
+      process.stdout.write(` no face found\n`);
+      continue;
+    }
+
+    const best = boxes[0];
+    data[id] = { cxFrac: best.cxFrac, cyFrac: best.cyFrac, hFrac: best.hFrac };
+    changed = true;
+    process.stdout.write(` done (cx=${best.cxFrac.toFixed(3)}, cy=${best.cyFrac.toFixed(3)})\n`);
+  }
+
+  const version = changed ? existing.version + 1 : existing.version;
+  saveOutputPng(game, version, data);
+  console.log(`  ${game} (png): version=${version}, entries=${Object.keys(data).length}, changed=${changed}`);
+  return { version, changed };
+}
+
+async function main() {
+  fs.mkdirSync(ASSET_DIR,     { recursive: true });
+  fs.mkdirSync(PNG_ASSET_DIR, { recursive: true });
+  fs.mkdirSync(OUTPUT_DIR,    { recursive: true });
 
   if (!fs.existsSync(ONNX_PATH)) {
     console.error(`ONNX model not found at ${ONNX_PATH}. Set ONNX_MODEL_PATH or ensure the cache step ran.`);
@@ -120,7 +192,16 @@ async function main() {
   const versions = Object.fromEntries(GAMES.map((game) => [game, results[game].version]));
   const versionFile = path.join(OUTPUT_DIR, 'framing_version.json');
   fs.writeFileSync(versionFile, JSON.stringify({ ...versions, generated: new Date().toISOString() }, null, 2));
-  console.log(`\nDone. Versions: ${JSON.stringify(versions)}`);
+  console.log(`\nDone. Live2D versions: ${JSON.stringify(versions)}`);
+
+  const pngResults = {};
+  for (const game of GAMES) {
+    pngResults[game] = await processGamePng(game);
+  }
+  const pngVersions = Object.fromEntries(GAMES.map((game) => [game, pngResults[game].version]));
+  const pngVersionFile = path.join(OUTPUT_DIR, 'framing_version_png.json');
+  fs.writeFileSync(pngVersionFile, JSON.stringify({ ...pngVersions, generated: new Date().toISOString() }, null, 2));
+  console.log(`Done. PNG versions: ${JSON.stringify(pngVersions)}`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

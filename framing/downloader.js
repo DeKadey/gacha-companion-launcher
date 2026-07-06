@@ -24,6 +24,24 @@ const RECIPES = {
   },
 };
 
+// PNG character art — kept in sync manually with electron/charImages.js's
+// NANOKA_URL_BY_GAME in the main app.
+const PNG_RECIPES = {
+  zzz: { url: (id) => `https://static.nanoka.cc/assets/zzz/Mindscape_${id}_1.webp`, headers: RECIPES.zzz.headers },
+  hsr: { url: (id) => `https://static.nanoka.cc/assets/hsr/avatardrawcard/${id}.webp`, headers: RECIPES.hsr.headers },
+};
+
+// Enka's own avatars.json — the full character roster for a game, independent
+// of whether nanoka has a Live2D rig for them. PNG framing should cover every
+// character (PNG mode works for all of them), not just the Live2D subset
+// RECIPES.manifest/characterUrl above are scoped to.
+const ENKA_STORE_BASE = 'https://raw.githubusercontent.com/EnkaNetwork/API-docs/master/store';
+async function listAllAvatarIds(game) {
+  const res = await fetch(`${ENKA_STORE_BASE}/${game}/avatars.json`);
+  if (!res.ok) return [];
+  return Object.keys(await res.json());
+}
+
 const _manifests    = {};
 const _zzzSpineNames = {};
 
@@ -150,4 +168,26 @@ async function listManifestIds(game) {
   return Object.keys(manifest);
 }
 
-module.exports = { downloadCharAssets, listManifestIds };
+// Downloads a character's PNG art to <root>/<game>/<id>.webp for face detection.
+// Returns { ok, path } or { ok: false, reason/error }.
+async function downloadPngAsset(root, game, characterId) {
+  const recipe = PNG_RECIPES[game];
+  if (!recipe) return { ok: false, error: `no PNG recipe for game "${game}"` };
+
+  const id   = String(characterId);
+  const dir  = path.join(root, game);
+  const dest = path.join(dir, `${id}.webp`);
+
+  if (fs.existsSync(dest)) return { ok: true, path: dest };
+
+  fs.mkdirSync(dir, { recursive: true });
+  try {
+    const buffer = await fetchBuffer(recipe.url(id), recipe);
+    fs.writeFileSync(dest, buffer);
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+  return { ok: true, path: dest };
+}
+
+module.exports = { downloadCharAssets, listManifestIds, downloadPngAsset, listAllAvatarIds };

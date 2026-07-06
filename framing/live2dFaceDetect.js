@@ -142,19 +142,17 @@ function iou(a, b) {
   const inter=ix*iy; return inter/(a.bw*a.bh + b.bw*b.bh - inter || 1);
 }
 
-async function detectFaces(dir, bases, modelPath) {
-  const session = await getSession(modelPath);
-  if (!session) return null;
-  const sc = await loadSpineCanvas();
-
-  const r = await renderPose(sc, dir, bases).catch(() => null);
-  if (!r) return null;
-  const { png, cw, ch, scale, minX, minY, boneAnchor } = r;
-
+// Runs the yolov8 anime-face model on an arbitrary image buffer (any source —
+// a rendered Live2D pose, or a plain PNG/webp) and returns face boxes in that
+// image's own pixel space (origin top-left, same as cw/ch), sorted by
+// confidence, after resize-to-letterbox + NMS. Shared by both detectFaces
+// (Live2D — converts these into spine "world" units afterward) and
+// detectFaceOnImage (PNG — these ARE the final coordinates, just normalized).
+async function detectBoxesInImage(session, imgBuffer, cw, ch) {
   const s2 = Math.min(INPUT / cw, INPUT / ch);
   const nw = Math.round(cw * s2), nh = Math.round(ch * s2);
   const padX = Math.floor((INPUT - nw) / 2), padY = Math.floor((INPUT - nh) / 2);
-  const buf = await sharp(png).resize(nw, nh).flatten({ background: { r: 0, g: 0, b: 0 } })
+  const buf = await sharp(imgBuffer).resize(nw, nh).flatten({ background: { r: 0, g: 0, b: 0 } })
     .extend({ top: padY, bottom: INPUT - nh - padY, left: padX, right: INPUT - nw - padX, background: { r: 0, g: 0, b: 0 } })
     .removeAlpha().raw().toBuffer();
   const chw   = new Float32Array(3 * INPUT * INPUT);
@@ -175,15 +173,28 @@ async function detectFaces(dir, bases, modelPath) {
   const keep = [];
   for (const b of boxes) if (keep.every((k) => iou(k, b) < 0.45)) keep.push(b);
 
-  const world = keep.map((b) => {
+  return keep.map((b) => {
     const px = (b.cx - padX) / s2, py = (b.cy - padY) / s2;
-    return {
-      cx: (px - PAD) / scale + minX,
-      cy: (ch - PAD - py) / scale + minY,
-      h:   b.bh / s2 / scale,
-      conf: b.conf,
-    };
+    return { cx: px, cy: py, h: b.bh / s2, conf: b.conf };
   });
+}
+
+async function detectFaces(dir, bases, modelPath) {
+  const session = await getSession(modelPath);
+  if (!session) return null;
+  const sc = await loadSpineCanvas();
+
+  const r = await renderPose(sc, dir, bases).catch(() => null);
+  if (!r) return null;
+  const { png, cw, ch, scale, minX, minY, boneAnchor } = r;
+
+  const boxes = await detectBoxesInImage(session, png, cw, ch);
+  const world = boxes.map((b) => ({
+    cx: (b.cx - PAD) / scale + minX,
+    cy: (ch - PAD - b.cy) / scale + minY,
+    h:   b.h / scale,
+    conf: b.conf,
+  }));
 
   if (boneAnchor && world.length > 1) {
     world.sort((a, b) =>
@@ -193,4 +204,26 @@ async function detectFaces(dir, bases, modelPath) {
   return world;
 }
 
-module.exports = { detectFaces, getAnimatedBounds };
+// Face detection directly on a static PNG/webp — no Spine posing/rendering
+// needed, since the image is already the final frame. Returns face boxes as
+// fractions of the image's own width/height (0-1), so the result is directly
+// usable as CSS object-position/background-position percentages regardless
+// of what size the image is ultimately displayed at.
+async function detectFaceOnImage(imgBuffer, modelPath) {
+  const session = await getSession(modelPath);
+  if (!session) return null;
+
+  const meta = await sharp(imgBuffer).metadata();
+  const cw = meta.width, ch = meta.height;
+  if (!cw || !ch) return null;
+
+  const boxes = await detectBoxesInImage(session, imgBuffer, cw, ch);
+  return boxes.map((b) => ({
+    cxFrac: b.cx / cw,
+    cyFrac: b.cy / ch,
+    hFrac:  b.h / ch,
+    conf:   b.conf,
+  }));
+}
+
+module.exports = { detectFaces, detectFaceOnImage, getAnimatedBounds };
