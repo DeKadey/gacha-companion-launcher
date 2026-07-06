@@ -24,10 +24,10 @@ const RECIPES = {
   },
 };
 
-// PNG character art — kept in sync manually with electron/charImages.js's
-// NANOKA_URL_BY_GAME in the main app.
+// PNG character art — HSR only. ZZZ has its own separate, already-working PNG
+// framing approach and doesn't go through this pipeline. Kept in sync manually
+// with electron/charImages.js's NANOKA_URL_BY_GAME in the main app.
 const PNG_RECIPES = {
-  zzz: { url: (id) => `https://static.nanoka.cc/assets/zzz/Mindscape_${id}_1.webp`, headers: RECIPES.zzz.headers },
   hsr: { url: (id) => `https://static.nanoka.cc/assets/hsr/avatardrawcard/${id}.webp`, headers: RECIPES.hsr.headers },
 };
 

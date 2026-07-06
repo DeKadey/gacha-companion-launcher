@@ -25,7 +25,8 @@ const PNG_ASSET_DIR = path.resolve(process.env.PNG_ASSET_CACHE_DIR ?? path.join(
 const ONNX_PATH     = path.resolve(process.env.ONNX_MODEL_PATH ?? path.join(__dirname, '..', '.framing-cache', 'yolov8_animeface.onnx'));
 const OUTPUT_DIR    = path.resolve(process.env.OUTPUT_DIR      ?? path.join(__dirname, '..', 'framing-output'));
 
-const GAMES = ['hsr', 'zzz'];
+const GAMES     = ['hsr', 'zzz']; // Live2D — both games
+const PNG_GAMES = ['hsr'];        // PNG — HSR only; ZZZ has its own separate, working approach
 
 function loadExisting(game) {
   const file = path.join(OUTPUT_DIR, `framing_${game}.json`);
@@ -195,10 +196,10 @@ async function main() {
   console.log(`\nDone. Live2D versions: ${JSON.stringify(versions)}`);
 
   const pngResults = {};
-  for (const game of GAMES) {
+  for (const game of PNG_GAMES) {
     pngResults[game] = await processGamePng(game);
   }
-  const pngVersions = Object.fromEntries(GAMES.map((game) => [game, pngResults[game].version]));
+  const pngVersions = Object.fromEntries(PNG_GAMES.map((game) => [game, pngResults[game].version]));
   const pngVersionFile = path.join(OUTPUT_DIR, 'framing_version_png.json');
   fs.writeFileSync(pngVersionFile, JSON.stringify({ ...pngVersions, generated: new Date().toISOString() }, null, 2));
   console.log(`Done. PNG versions: ${JSON.stringify(pngVersions)}`);
