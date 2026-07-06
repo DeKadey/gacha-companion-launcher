@@ -11,6 +11,13 @@ on:
 jobs:
   compute-framing:
     runs-on: ubuntu-latest
+    # This repo's default GITHUB_TOKEN permission is read-only (Settings → Actions
+    # → General → Workflow permissions), so the publish step below (which needs to
+    # create/update a release) fails with "Resource not accessible by integration"
+    # without this. Scoped to just this workflow rather than loosening the repo-wide
+    # default, which would affect every other workflow too.
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
