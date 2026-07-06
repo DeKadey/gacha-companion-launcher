@@ -7,8 +7,6 @@ on:
     - cron: '0 22 * * 3'   # Wednesday 22:00 UTC → Thursday 00:00 CEST
     - cron: '0 22 * * 6'   # Saturday  22:00 UTC → Sunday   00:00 CEST
   workflow_dispatch:         # allow manual trigger from the GitHub Actions UI
-permissions:
-  contents: write
 
 jobs:
   compute-framing:
@@ -25,14 +23,16 @@ jobs:
 
       - name: Install framing dependencies
         working-directory: framing
-        run: npm ci
+        run: npm install
 
       # Cache spine assets between runs so we only re-download new characters.
       # The cache key uses the ISO week so it rotates weekly (picks up new characters).
       - name: Restore asset cache
         uses: actions/cache@v4
         with:
-          path: .framing-cache/assets
+          path: |
+            .framing-cache/assets
+            .framing-cache/png-assets
           key: framing-assets-${{ runner.os }}-${{ steps.date.outputs.week }}
           restore-keys: |
             framing-assets-${{ runner.os }}-
@@ -67,13 +67,17 @@ jobs:
           curl -L -f -o framing-output/framing_zzz.json \
             https://github.com/DeKadey/gacha-companion-launcher/releases/download/framing-data/framing_zzz.json \
             || echo '{"version":0,"data":{}}' > framing-output/framing_zzz.json
+          curl -L -f -o framing-output/framing_hsr_png.json \
+            https://github.com/DeKadey/gacha-companion-launcher/releases/download/framing-data/framing_hsr_png.json \
+            || echo '{"version":0,"data":{}}' > framing-output/framing_hsr_png.json
 
       - name: Compute framing
         run: node framing/compute-framing.js
         env:
-          ASSET_CACHE_DIR: .framing-cache/assets
-          ONNX_MODEL_PATH: .framing-cache/yolov8_animeface.onnx
-          OUTPUT_DIR:      framing-output
+          ASSET_CACHE_DIR:     .framing-cache/assets
+          PNG_ASSET_CACHE_DIR: .framing-cache/png-assets
+          ONNX_MODEL_PATH:     .framing-cache/yolov8_animeface.onnx
+          OUTPUT_DIR:          framing-output
 
       # Publish the computed files to the framing-data release tag.
       # softprops/action-gh-release will create or update the release automatically.
@@ -82,10 +86,12 @@ jobs:
         with:
           tag_name: framing-data
           name: Framing Data
-          body: Pre-computed Live2D head-framing data. Updated automatically on Thursdays and Sundays.
+          body: Pre-computed Live2D head-framing + PNG face-framing data. Updated automatically on Thursdays and Sundays.
           files: |
             framing-output/framing_hsr.json
             framing-output/framing_zzz.json
             framing-output/framing_version.json
+            framing-output/framing_hsr_png.json
+            framing-output/framing_version_png.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
