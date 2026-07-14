@@ -5,6 +5,7 @@
 
 const fs   = require('fs');
 const path = require('path');
+const releasedIds = require('./releasedIds');
 
 const BASE_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -98,7 +99,15 @@ async function downloadCharAssets(root, game, characterId) {
   const recipe = RECIPES[game];
   if (!recipe) return { ok: false, error: `no recipe for game "${game}"` };
 
-  const id = String(characterId);
+  const id  = String(characterId);
+  const dir = path.join(root, game, id);
+
+  // nanoka sometimes lists datamined characters before HoYoverse ships them —
+  // only download for IDs confirmed released via the official banner schedule,
+  // unless this character was already cached before the whitelist existed.
+  if (!releasedIds.isReleased(game, id) && !fs.existsSync(dir)) {
+    return { ok: false, reason: 'unreleased' };
+  }
 
   let bases;
   try {
@@ -117,7 +126,6 @@ async function downloadCharAssets(root, game, characterId) {
   }
 
   const cdnDir = recipe.flat ? recipe.base : `${recipe.base}/${id}`;
-  const dir    = path.join(root, game, id);
 
   try {
     for (const base of bases) {
@@ -179,6 +187,11 @@ async function downloadPngAsset(root, game, characterId) {
   const dest = path.join(dir, `${id}.webp`);
 
   if (fs.existsSync(dest)) return { ok: true, path: dest };
+
+  // Same released-only gate as downloadCharAssets — nanoka's avatardrawcard art
+  // can exist before HoYoverse ships the character, even though the ID list
+  // itself here comes from Enka's roster.
+  if (!releasedIds.isReleased(game, id)) return { ok: false, reason: 'unreleased' };
 
   fs.mkdirSync(dir, { recursive: true });
   try {

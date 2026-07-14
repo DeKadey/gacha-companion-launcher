@@ -19,6 +19,7 @@ const path = require('path');
 const { downloadCharAssets, listManifestIds, downloadPngAsset, listAllAvatarIds } = require('./downloader');
 const { computeFraming } = require('./live2dFraming');
 const { getAnimatedBounds, detectFaceOnImage } = require('./live2dFaceDetect');
+const releasedIds = require('./releasedIds');
 
 const ASSET_DIR     = path.resolve(process.env.ASSET_CACHE_DIR     ?? path.join(__dirname, '..', '.framing-cache', 'assets'));
 const PNG_ASSET_DIR = path.resolve(process.env.PNG_ASSET_CACHE_DIR ?? path.join(__dirname, '..', '.framing-cache', 'png-assets'));
@@ -182,6 +183,10 @@ async function main() {
     console.error(`ONNX model not found at ${ONNX_PATH}. Set ONNX_MODEL_PATH or ensure the cache step ran.`);
     process.exit(1);
   }
+
+  // Load the released-IDs whitelist (HoYoverse's own banner schedule) before any
+  // nanoka download — gates downloadCharAssets/downloadPngAsset in downloader.js.
+  await releasedIds.init(GAMES);
 
   const results = {};
   for (const game of GAMES) {
